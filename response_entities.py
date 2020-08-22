@@ -17,7 +17,6 @@ class Entity:
 
     def __repr__(self):
         return ElementTree.tostring(self._tree).decode('ASCII')
-        return ElementTree.dump(self._tree)
 
     # Hook for subclasses to override to provide special parsing
     # for computing their parameters.
