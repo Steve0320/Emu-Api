@@ -24,7 +24,10 @@ class Entity:
         return
 
     def find_text(self, tag):
-        return self._tree.find(tag).text
+        node = self._tree.find(tag)
+        if node is None:
+            return None
+        return node.text
 
     # The root element associated with this class
     @classmethod
@@ -160,15 +163,18 @@ class InstantaneousDemand(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
         self.timestamp = self.find_text("TimeStamp")
-        self.demand = int(self.find_text("Demand"), 16)
-        self.multiplier = int(self.find_text("Multiplier"), 16)
-        self.divisor = int(self.find_text("Divisor"), 16)
+        self.demand = int(self.find_text("Demand") or "0x00", 16)
+        self.multiplier = int(self.find_text("Multiplier") or "0x00", 16)
+        self.divisor = int(self.find_text("Divisor") or "0x00", 16)
         self.digits_right = self.find_text("DigitsRight")
         self.digits_left = self.find_text("DigitsLeft")
         self.suppress_leading_zero = self.find_text("SuppressLeadingZero")
 
-        # Compute actual reading
-        self.reading = self.demand * self.multiplier / float(self.divisor)
+        # Compute actual reading (protecting from divide-by-zero)
+        if self.divisor != 0:
+            self.reading = self.demand * self.multiplier / float(self.divisor)
+        else:
+            self.reading = 0
 
 
 class CurrentSummationDelivered(Entity):

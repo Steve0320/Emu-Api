@@ -6,7 +6,7 @@ import response_entities
 
 class Emu:
 
-    def __init__(self, debug=False, history_length=10):
+    def __init__(self, debug=False):
 
         # Internal communication
         self._channel_open = False
@@ -21,9 +21,7 @@ class Emu:
         # in response_entities.py
         self._data = {}
 
-        # TODO: History, holds last history_length responses.
-        self.history_length = history_length
-        # self.history = {}
+        # TODO: Implement history mechanism
 
     # Get the latest response for the given type. Also marks
     # the object as stale.
@@ -141,9 +139,6 @@ class Emu:
     #         Raven Commands        #
     #################################
 
-    def initialize(self):
-        self.issue_command('initialize')
-
     def factory_reset(self):
         self.issue_command('factory_reset')
 
@@ -153,7 +148,6 @@ class Emu:
     def get_device_info(self):
         self.issue_command('get_device_info')
 
-    # TODO: This is currently broken unless event is specified
     def get_schedule(self, mac=None, event=None):
 
         if event not in['time', 'price', 'demand', 'summation', 'message']:
@@ -237,11 +231,21 @@ class Emu:
         opts = {'MeterMacId': mac, 'Refresh': self._format_yn(refresh)}
         self.issue_command('get_current_price', opts)
 
-    def set_current_price(self, mac=None, price=None, trailing_digits=0):
+    # Price is in cents, w/ decimals (e.g. "24.373")
+    def set_current_price(self, mac=None, price="0.0"):
+
+        parts = price.split(".", 1)
+        if len(parts) == 1:
+            trailing = 2
+            price = int(parts[0])
+        else:
+            trailing = len(parts[1]) + 2
+            price = int(parts[0] + parts[1])
+
         opts = {
             'MeterMacId': mac,
             'Price': self._format_hex(price),
-            'TrailingDigits': self._format_hex(trailing_digits, digits=2)
+            'TrailingDigits': self._format_hex(trailing, digits=2)
         }
         self.issue_command('set_current_price', opts)
 
@@ -276,16 +280,3 @@ class Emu:
             'Duration': self._format_hex(duration, digits=4)
         }
         self.issue_command('set_fast_poll', opts)
-
-    def get_profile_data(self, mac=None, periods=1, end_time=0, channel='Delivered'):
-
-        if channel not in ['Delivered', 'Received']:
-            raise ValueError('Channel must be Delivered or Received')
-
-        opts = {
-            'MeterMacId': mac,
-            'NumberOfPeriods': self._format_hex(periods, digits=1),
-            'EndTime': self._format_hex(end_time),
-            'IntervalChannel': channel
-        }
-        self.issue_command('get_profile_data', opts)
