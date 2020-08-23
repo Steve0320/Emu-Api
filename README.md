@@ -20,7 +20,7 @@ and Linux, usually) must be used.
 ### Example Usage
 #### Synchronous
 ```
-from emu-power import Emu
+from emu_power import Emu
 
 api = Emu(synchronous=True)
 api.start_serial("/dev/tty.usbmodem146101")
@@ -31,8 +31,8 @@ response = api.get_instantaneous_usage()
 
 #### Asynchronous
 ```
-from emu-power import Emu
-from emu-power.response_entities import InstantaneousUsage
+from emu_power import Emu
+from emu_power.response_entities import InstantaneousUsage
 import time
 
 api = Emu()
