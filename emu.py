@@ -7,7 +7,10 @@ import response_entities
 
 class Emu:
 
-    # Construct a new Emu object.
+    # Construct a new Emu object. Set synchronous to true to to attempt to
+    # return results synchronously if possible. Timeout is the time period
+    # in seconds until a request is considered failed. Poll factor indicates
+    # the fraction of a second to check for a response.
     def __init__(self, debug=False, synchronous=False, timeout=10, poll_factor=2):
 
         # Internal communication
@@ -28,6 +31,16 @@ class Emu:
         self._data = {}
 
         # TODO: Implement history mechanism
+
+    # Get the most recent fresh response that has come in. This
+    # should be used in asynchronous mode.
+    def get_data(self, klass):
+        res = self._data.get(klass.tag_name())
+        if res is not None:
+            res.fresh = False
+        if not res.fresh:
+            return None
+        return res
 
     # Open communication channel
     def start_serial(self, port_name):
