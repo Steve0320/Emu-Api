@@ -47,6 +47,12 @@ api.get_instantaneous_usage()
 time.sleep(5)
 response = api.get_data(InstantaneousUsage)
 ```
+Note: In real programs using asynchronous mode, it would probably make sense to make
+use of the schedule function of the EMU-2. This sets the frequency that certain events
+are sent, and allows for data to be received without constant polling. The schedule may
+be set using the set_schedule(...) method of the API. After the schedule is set up, the
+consuming program may periodically call the get_data method to access the most recent
+received data.
 
 ### Contributing
 Contributions are welcome! Not all commands have been thoroughly tested yet, since I

@@ -2,6 +2,7 @@ import serial
 import threading
 from xml.etree import ElementTree
 import time
+import itertools
 from emu_power import response_entities
 
 
@@ -10,8 +11,9 @@ class Emu:
     # Construct a new Emu object. Set synchronous to true to to attempt to
     # return results synchronously if possible. Timeout is the time period
     # in seconds until a request is considered failed. Poll factor indicates
-    # the fraction of a second to check for a response.
-    def __init__(self, debug=False, synchronous=False, timeout=10, poll_factor=2):
+    # the fraction of a second to check for a response. Set fresh_only to True
+    # to only return fresh responses from get_data. Only useful in asynchronous mode.
+    def __init__(self, debug=False, fresh_only=False, synchronous=False, timeout=10, poll_factor=2):
 
         # Internal communication
         self._channel_open = False
@@ -20,6 +22,8 @@ class Emu:
         self._stop_thread = False
 
         self.debug = debug
+
+        self.fresh_only = fresh_only
 
         self.synchronous = synchronous
         self.timeout = timeout
@@ -35,11 +39,15 @@ class Emu:
     # Get the most recent fresh response that has come in. This
     # should be used in asynchronous mode.
     def get_data(self, klass):
+
         res = self._data.get(klass.tag_name())
-        if res is not None:
-            res.fresh = False
-        if not res.fresh:
+        if not self.fresh_only:
+            return res
+
+        if res is None or not res.fresh:
             return None
+
+        res.fresh = False
         return res
 
     # Open communication channel
@@ -49,7 +57,7 @@ class Emu:
             return True
 
         try:
-            self._serial_port = self._create_serial(port_name)
+            self._serial_port = serial.Serial(port_name, 115200, timeout=1)
         except serial.serialutil.SerialException:
             return False
 
@@ -71,12 +79,6 @@ class Emu:
         self._serial_port = None
         return True
 
-    # Internal helper for opening serial channel to device
-    def _create_serial(self, port):
-        baud_rate = 115200
-        timeout = 1
-        return serial.Serial(port, baud_rate, timeout=timeout)
-
     # Main communication thread - handles all asynchronous messaging
     def _communication_thread(self):
         while True:
@@ -90,25 +92,28 @@ class Emu:
 
             if len(bin_lines) > 0:
 
+                # A response can have multiple fragments, so we wrap them in a pseudo root for parsing
                 try:
-                    # TODO: Handle multiple fragments correctly (get_schedule)
-                    tree = ElementTree.fromstringlist(bin_lines)
+                    wrapped = itertools.chain('<Root>', bin_lines, '</Root>')
+                    root = ElementTree.fromstringlist(wrapped)
                 except ElementTree.ParseError:
                     if self.debug:
                         print("Malformed XML " + b''.join(bin_lines).decode('ASCII'))
                     continue
 
-                if self.debug:
-                    ElementTree.dump(tree)
+                for tree in root:
 
-                response_type = tree.tag
-                klass = response_entities.Entity.tag_to_class(response_type)
-                if klass is None:
                     if self.debug:
-                        print("Unsupported tag " + response_type)
-                    continue
-                else:
-                    self._data[response_type] = klass(tree)
+                        ElementTree.dump(tree)
+
+                    response_type = tree.tag
+                    klass = response_entities.Entity.tag_to_class(response_type)
+                    if klass is None:
+                        if self.debug:
+                            print("Unsupported tag " + response_type)
+                        continue
+                    else:
+                        self._data[response_type] = klass(tree)
 
     # Issue a command to the device. Pass the command name as the first
     # argument, and any additional params as a dict. Will return immediately
@@ -171,6 +176,15 @@ class Emu:
     def _format_hex(self, num, digits=8):
         return "0x{:0{digits}x}".format(num, digits=digits)
 
+    # Check if an event is a valid value
+    def _check_valid_event(self, event, allow_none=True):
+        enum = ['time', 'summation', 'billing_period', 'block_period',
+                'message', 'price', 'scheduled_prices', 'demand']
+        if allow_none:
+            enum.append(None)
+        if event not in enum:
+            raise ValueError('Invalid event specified')
+
     # The following are convenience methods for sending commands. Commands
     # can also be sent manually using the generic issue_command method.
 
@@ -192,18 +206,12 @@ class Emu:
         return self.issue_command('get_device_info', return_class=response_entities.DeviceInfo)
 
     def get_schedule(self, mac=None, event=None):
-
-        if event not in['time', 'price', 'demand', 'summation', 'message']:
-            raise ValueError('Valid events are time, price, demand, summation, or message')
-
+        self._check_valid_event(event)
         opts = {'MeterMacId': mac, 'Event': event}
         return self.issue_command('get_schedule', opts, return_class=response_entities.ScheduleInfo)
 
     def set_schedule(self, mac=None, event=None, frequency=10, enabled=True):
-
-        if event not in ['time', 'price', 'demand', 'summation', 'message']:
-            raise ValueError('Valid events are time, price, demand, summation, or message')
-
+        self._check_valid_event(event, allow_none=False)
         opts = {
             'MeterMacId': mac,
             'Event': event,
@@ -213,10 +221,7 @@ class Emu:
         return self.issue_command('set_schedule', opts)
 
     def set_schedule_default(self, mac=None, event=None):
-
-        if event not in ['time', 'price', 'demand', 'summation', 'message']:
-            raise ValueError('Valid events are time, price, demand, summation, or message')
-
+        self._check_valid_event(event)
         opts = {'MeterMacId': mac, 'Event': event}
         return self.issue_command('set_schedule_default', opts)
 
