@@ -121,7 +121,6 @@ class Emu:
     # it will return data when available, or None if the timeout has elapsed.
     def issue_command(self, command, params=None, return_class=None):
 
-        # TODO: Ensure stream open
         if not self._channel_open:
             raise ValueError("Serial port is not open")
 
@@ -136,6 +135,9 @@ class Emu:
                     field.text = v
 
         bin_string = ElementTree.tostring(root)
+
+        if self.debug:
+            ElementTree.dump(root)
 
         if (not self.synchronous) or return_class is None:
             if self.debug:
