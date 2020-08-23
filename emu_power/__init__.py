@@ -2,7 +2,7 @@ import serial
 import threading
 from xml.etree import ElementTree
 import time
-import response_entities
+from emu_power import response_entities
 
 
 class Emu:
