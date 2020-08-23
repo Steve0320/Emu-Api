@@ -29,6 +29,9 @@ class Entity:
             return None
         return node.text
 
+    def find_hex(self, text):
+        return int(self.find_text(text) or "0x00", 16)
+
     # The root element associated with this class
     @classmethod
     def tag_name(cls):
@@ -163,11 +166,11 @@ class InstantaneousDemand(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
         self.timestamp = self.find_text("TimeStamp")
-        self.demand = int(self.find_text("Demand") or "0x00", 16)
-        self.multiplier = int(self.find_text("Multiplier") or "0x00", 16)
-        self.divisor = int(self.find_text("Divisor") or "0x00", 16)
-        self.digits_right = self.find_text("DigitsRight")
-        self.digits_left = self.find_text("DigitsLeft")
+        self.demand = self.find_hex("Demand")
+        self.multiplier = self.find_hex("Multiplier")
+        self.divisor = self.find_hex("Divisor")
+        self.digits_right = self.find_hex("DigitsRight")
+        self.digits_left = self.find_hex("DigitsLeft")
         self.suppress_leading_zero = self.find_text("SuppressLeadingZero")
 
         # Compute actual reading (protecting from divide-by-zero)
@@ -181,36 +184,48 @@ class CurrentSummationDelivered(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
         self.timestamp = self.find_text("TimeStamp")
-        self.summation_delivered = self.find_text("SummationDelivered")
-        self.summation_received = self.find_text("SummationReceived")
-        self.multiplier = self.find_text("Multiplier")
-        self.divisor = self.find_text("Divisor")
-        self.digits_right = self.find_text("DigitsRight")
-        self.digits_left = self.find_text("DigitsLeft")
+        self.summation_delivered = self.find_hex("SummationDelivered")
+        self.summation_received = self.find_hex("SummationReceived")
+        self.multiplier = self.find_hex("Multiplier")
+        self.divisor = self.find_hex("Divisor")
+        self.digits_right = self.find_hex("DigitsRight")
+        self.digits_left = self.find_hex("DigitsLeft")
         self.suppress_leading_zero = self.find_text("SuppressLeadingZero")
+
+        # Compute actual reading (protecting from divide-by-zero)
+        if self.divisor != 0:
+            self.reading = self.summation_delivered * self.multiplier / float(self.divisor)
+        else:
+            self.reading = 0
 
 
 class CurrentPeriodUsage(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
         self.timestamp = self.find_text("TimeStamp")
-        self.current_usage = self.find_text("CurrentUsage")
-        self.multiplier = self.find_text("Multiplier")
-        self.divisor = self.find_text("Divisor")
-        self.digits_right = self.find_text("DigitsRight")
-        self.digits_left = self.find_text("DigitsLeft")
+        self.current_usage = self.find_hex("CurrentUsage")
+        self.multiplier = self.find_hex("Multiplier")
+        self.divisor = self.find_hex("Divisor")
+        self.digits_right = self.find_hex("DigitsRight")
+        self.digits_left = self.find_hex("DigitsLeft")
         self.suppress_leading_zero = self.find_text("SuppressLeadingZero")
         self.start_date = self.find_text("StartDate")
+
+        # Compute actual reading (protecting from divide-by-zero)
+        if self.divisor != 0:
+            self.reading = self.current_usage * self.multiplier / float(self.divisor)
+        else:
+            self.reading = 0
 
 
 class LastPeriodUsage(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
-        self.last_usage = self.find_text("LastUsage")
-        self.multiplier = self.find_text("Multiplier")
-        self.divisor = self.find_text("Divisor")
-        self.digits_right = self.find_text("DigitsRight")
-        self.digits_left = self.find_text("DigitsLeft")
+        self.last_usage = self.find_hex("LastUsage")
+        self.multiplier = self.find_hex("Multiplier")
+        self.divisor = self.find_hex("Divisor")
+        self.digits_right = self.find_hex("DigitsRight")
+        self.digits_left = self.find_hex("DigitsLeft")
         self.suppress_leading_zero = self.find_text("SuppressLeadingZero")
         self.start_date = self.find_text("StartDate")
         self.end_date = self.find_text("EndDate")
