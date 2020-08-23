@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: emu-power
-Version: 1.1
+Version: 1.2
 Summary: A Python3 API to interface with Rainforest Automation's EMU-2
 Home-page: https://github.com/Steve0320/Emu-Api
 Author: Steven Bertolucci

@@ -3,6 +3,9 @@
 This library allows communication with a Rainforest Automation EMU-2 device.
 It is a rewrite of Rainforest's Emu-Serial-API in Python 3, and follows a similar architectural pattern where possible.
 
+### Installation
+This library is distributed via pip and may be installed using `pip install emu-power`.
+
 ### Usage
 This API can be used in asynchronous mode or synchronous mode. Technically, communication always happens asynchronously
 with the Emu, but this library allows for a synchronous API to emulated.
@@ -44,3 +47,15 @@ api.get_instantaneous_usage()
 time.sleep(5)
 response = api.get_data(InstantaneousUsage)
 ```
+
+### Contributing
+Contributions are welcome! Not all commands have been thoroughly tested yet, since I
+haven't have a reason to use some of them. This library was written both to provide a
+more convenient interface with the EMU-2, as well as to get some experience writing
+Python modules. Functionality and style improvements suggestions are welcome.
+
+This library is based off of the XML spec for the Rainforest RAVEN, which may be found
+[on Rainforest Automation's website](https://rainforestautomation.com/wp-content/uploads/2014/02/raven_xml_api_r127.pdf).
+This spec is similar but not identical to the API that the EMU-2 uses. Some commands not
+listed in this document were implemented based off of the official Python 2 library, which may
+be [found on Github](https://github.com/rainforestautomation/Emu-Serial-API).

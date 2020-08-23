@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="emu-power",
-    version="1.1",
+    version="1.2",
     author="Steven Bertolucci",
     author_email="srbertol@mtu.edu",
     description="A Python3 API to interface with Rainforest Automation's EMU-2",
@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/Steve0320/Emu-Api",
     packages=setuptools.find_packages(),
     install_requires=[
-        'serial'
+        'pyserial'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
