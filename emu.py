@@ -7,7 +7,8 @@ import response_entities
 
 class Emu:
 
-    def __init__(self, debug=False, synchronous=False):
+    # Construct a new Emu object.
+    def __init__(self, debug=False, synchronous=False, timeout=10, poll_factor=2):
 
         # Internal communication
         self._channel_open = False
@@ -16,7 +17,10 @@ class Emu:
         self._stop_thread = False
 
         self.debug = debug
+
         self.synchronous = synchronous
+        self.timeout = timeout
+        self.poll_factor = poll_factor
 
         # Data, updated asynchronously by thread, keyed
         # by root element. These are defined by classes
@@ -97,9 +101,11 @@ class Emu:
     # argument, and any additional params as a dict. Will return immediately
     # unless the synchronous attribute on the library is true, in which case
     # it will return data when available, or None if the timeout has elapsed.
-    def issue_command(self, command, params=None, return_class=None, timeout=5, poll_factor=2):
+    def issue_command(self, command, params=None, return_class=None):
 
         # TODO: Ensure stream open
+        if not self._channel_open:
+            raise ValueError("Serial port is not open")
 
         root = ElementTree.Element('Command')
         name_field = ElementTree.SubElement(root, 'Name')
@@ -129,8 +135,8 @@ class Emu:
 
         self._serial_port.write(bin_string)
 
-        step = 1.0 / poll_factor
-        for i in range(0, timeout * poll_factor):
+        step = 1.0 / self.poll_factor
+        for i in range(0, self.timeout * self.poll_factor):
             d = self._data.get(tag)
             if d is not None and d.fresh:
                 return d
