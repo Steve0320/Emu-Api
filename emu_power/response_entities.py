@@ -37,12 +37,12 @@ class Entity:
 
     def find_time(self, text):
         """Parse the hex value as seconds since jan 1, 2000."""
-        hex_text = self.find_hex(text)
-        if not hex_text:
+        time_since_2000 = self.find_hex(text)
+        if not time_since_2000:
             return None
 
         delta = 946684800   # seconds between jan 1, 1970 and jan 1, 2000.
-        return datetime.datetime.fromtimestamp(int(hex_text, 16) + delta)
+        return datetime.datetime.fromtimestamp(time_since_2000 + delta)
 
     # The root element associated with this class
     @classmethod
