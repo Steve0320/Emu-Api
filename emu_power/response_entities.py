@@ -1,3 +1,5 @@
+import ctypes
+import datetime
 from xml.etree import ElementTree
 
 
@@ -30,7 +32,17 @@ class Entity:
         return node.text
 
     def find_hex(self, text):
-        return int(self.find_text(text) or "0x00", 16)
+        """Parse hex text into a signed int32."""
+        return ctypes.c_int(int(self.find_text(text) or "0x00", 16)).value
+
+    def find_time(self, text):
+        """Parse the hex value as seconds since jan 1, 2000."""
+        hex_text = self.find_hex(text)
+        if not hex_text:
+            return None
+
+        delta = 946684800   # seconds between jan 1, 1970 and jan 1, 2000.
+        return datetime.datetime.fromtimestamp(int(hex_text, 16) + delta)
 
     # The root element associated with this class
     @classmethod

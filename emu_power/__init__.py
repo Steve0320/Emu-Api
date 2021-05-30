@@ -13,7 +13,7 @@ if platform.system() == 'Darwin':
     _DEFAULT_DEVICE = '/dev/tty.usbmodem11'
 elif platform.system() == 'Linux':
     _DEFAULT_DEVICE = '/dev/ttyACM0'
-else
+else:
     _DEFAULT_DEVICE = None
 
 

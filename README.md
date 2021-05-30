@@ -29,7 +29,7 @@ api = Emu(synchronous=True)
 api.start_serial("/dev/tty.usbmodem146101")
 
 # This will return an instance of InstantaneousDemand, or None on timeout.
-response = api.get_instantaneous_usage()
+response = api.get_instantaneous_demand()
 ```
 
 #### Asynchronous
@@ -43,7 +43,7 @@ api.start_serial("/dev/tty.usbmodem146101")
 
 # This will return immediately. The response data will become available
 # when the device responds.
-api.get_instantaneous_usage()
+api.get_instantaneous_demand()
 time.sleep(5)
 response = api.get_data(InstantaneousDemand)
 ```
