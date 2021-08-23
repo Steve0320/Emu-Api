@@ -1,20 +1,29 @@
-import serial
-import threading
-from xml.etree import ElementTree
-import time
 import itertools
+import platform
+import threading
+import time
+from xml.etree import ElementTree
+
+import serial
+
 from emu_power import response_entities
 
 
-class Emu:
+if platform.system() == 'Darwin':
+    _DEFAULT_DEVICE = '/dev/tty.usbmodem11'
+elif platform.system() == 'Linux':
+    _DEFAULT_DEVICE = '/dev/ttyACM0'
+else:
+    _DEFAULT_DEVICE = None
 
+
+class Emu:
     # Construct a new Emu object. Set synchronous to true to to attempt to
     # return results synchronously if possible. Timeout is the time period
     # in seconds until a request is considered failed. Poll factor indicates
     # the fraction of a second to check for a response. Set fresh_only to True
     # to only return fresh responses from get_data. Only useful in asynchronous mode.
     def __init__(self, debug=False, fresh_only=False, synchronous=False, timeout=10, poll_factor=2):
-
         # Internal communication
         self._channel_open = False
         self._serial_port = None
@@ -39,7 +48,6 @@ class Emu:
     # Get the most recent fresh response that has come in. This
     # should be used in asynchronous mode.
     def get_data(self, klass):
-
         res = self._data.get(klass.tag_name())
         if not self.fresh_only:
             return res
@@ -51,7 +59,9 @@ class Emu:
         return res
 
     # Open communication channel
-    def start_serial(self, port_name):
+    def start_serial(self, port_name=_DEFAULT_DEVICE):
+        assert port_name, (
+            "Must specify a port name; cannot determine default for your OS")
 
         if self._channel_open:
             return True
@@ -68,7 +78,6 @@ class Emu:
 
     # Close the communication channel
     def stop_serial(self):
-
         if not self._channel_open:
             return True
 
@@ -82,7 +91,6 @@ class Emu:
     # Main communication thread - handles all asynchronous messaging
     def _communication_thread(self):
         while True:
-
             if self._stop_thread:
                 self._stop_thread = False
                 return
@@ -120,7 +128,6 @@ class Emu:
     # unless the synchronous attribute on the library is true, in which case
     # it will return data when available, or None if the timeout has elapsed.
     def issue_command(self, command, params=None, return_class=None):
-
         if not self._channel_open:
             raise ValueError("Serial port is not open")
 
@@ -198,7 +205,7 @@ class Emu:
         return self.issue_command('restart')
 
     # Dangerous! Will decommission device!
-    def factory_reset(self):
+    def factory_reset_warning_dangerous(self):
         return self.issue_command('factory_reset')
 
     def get_connection_status(self):
@@ -266,7 +273,6 @@ class Emu:
         return self.issue_command('get_message', opts, return_class=response_entities.MessageCluster)
 
     def confirm_message(self, mac=None, message_id=None):
-
         if message_id is None:
             raise ValueError('Message id is required')
 
@@ -283,7 +289,6 @@ class Emu:
 
     # Price is in cents, w/ decimals (e.g. "24.373")
     def set_current_price(self, mac=None, price="0.0"):
-
         parts = price.split(".", 1)
         if len(parts) == 1:
             trailing = 2

@@ -1,3 +1,5 @@
+import ctypes
+import datetime
 from xml.etree import ElementTree
 
 
@@ -30,7 +32,17 @@ class Entity:
         return node.text
 
     def find_hex(self, text):
-        return int(self.find_text(text) or "0x00", 16)
+        """Parse hex text into a signed int32."""
+        return ctypes.c_int(int(self.find_text(text) or "0x00", 16)).value
+
+    def find_time(self, text):
+        """Parse the hex value as seconds since jan 1, 2000."""
+        time_since_2000 = self.find_hex(text)
+        if not time_since_2000:
+            return None
+
+        delta = 946684800   # seconds between jan 1, 1970 and jan 1, 2000.
+        return datetime.datetime.fromtimestamp(time_since_2000 + delta)
 
     # The root element associated with this class
     @classmethod
@@ -134,7 +146,7 @@ class TimeCluster(Entity):
 class MessageCluster(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
-        self.timestamp = self.find_text("TimeStamp")
+        self.timestamp = self.find_time("TimeStamp")
         self.id = self.find_text("Id")
         self.text = self.find_text("Text")
         self.confirmation_required = self.find_text("ConfirmationRequired")
@@ -149,7 +161,7 @@ class MessageCluster(Entity):
 class PriceCluster(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
-        self.timestamp = self.find_text("TimeStamp")
+        self.timestamp = self.find_time("TimeStamp")
         self.price = self.find_text("Price")
         self.currency = self.find_text("Currency")      # ISO-4217
         self.trailing_digits = self.find_text("TrailingDigits")
@@ -165,7 +177,7 @@ class PriceCluster(Entity):
 class InstantaneousDemand(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
-        self.timestamp = self.find_text("TimeStamp")
+        self.timestamp = self.find_time("TimeStamp")
         self.demand = self.find_hex("Demand")
         self.multiplier = self.find_hex("Multiplier")
         self.divisor = self.find_hex("Divisor")
@@ -183,7 +195,7 @@ class InstantaneousDemand(Entity):
 class CurrentSummationDelivered(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
-        self.timestamp = self.find_text("TimeStamp")
+        self.timestamp = self.find_time("TimeStamp")
         self.summation_delivered = self.find_hex("SummationDelivered")
         self.summation_received = self.find_hex("SummationReceived")
         self.multiplier = self.find_hex("Multiplier")
@@ -202,14 +214,14 @@ class CurrentSummationDelivered(Entity):
 class CurrentPeriodUsage(Entity):
     def _parse(self):
         self.meter_mac = self.find_text("MeterMacId")
-        self.timestamp = self.find_text("TimeStamp")
+        self.timestamp = self.find_time("TimeStamp")
         self.current_usage = self.find_hex("CurrentUsage")
         self.multiplier = self.find_hex("Multiplier")
         self.divisor = self.find_hex("Divisor")
         self.digits_right = self.find_hex("DigitsRight")
         self.digits_left = self.find_hex("DigitsLeft")
         self.suppress_leading_zero = self.find_text("SuppressLeadingZero")
-        self.start_date = self.find_text("StartDate")
+        self.start_date = self.find_time("StartDate")
 
         # Compute actual reading (protecting from divide-by-zero)
         if self.divisor != 0:
@@ -227,8 +239,8 @@ class LastPeriodUsage(Entity):
         self.digits_right = self.find_hex("DigitsRight")
         self.digits_left = self.find_hex("DigitsLeft")
         self.suppress_leading_zero = self.find_text("SuppressLeadingZero")
-        self.start_date = self.find_text("StartDate")
-        self.end_date = self.find_text("EndDate")
+        self.start_date = self.find_time("StartDate")
+        self.end_date = self.find_time("EndDate")
 
 
 # TODO: IntervalData may appear more than once

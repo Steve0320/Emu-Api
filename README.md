@@ -28,14 +28,14 @@ from emu_power import Emu
 api = Emu(synchronous=True)
 api.start_serial("/dev/tty.usbmodem146101")
 
-# This will return an instance of InstantaneousUsage, or None on timeout.
-response = api.get_instantaneous_usage()
+# This will return an instance of InstantaneousDemand, or None on timeout.
+response = api.get_instantaneous_demand()
 ```
 
 #### Asynchronous
 ```
 from emu_power import Emu
-from emu_power.response_entities import InstantaneousUsage
+from emu_power.response_entities import InstantaneousDemand
 import time
 
 api = Emu()
@@ -43,9 +43,9 @@ api.start_serial("/dev/tty.usbmodem146101")
 
 # This will return immediately. The response data will become available
 # when the device responds.
-api.get_instantaneous_usage()
+api.get_instantaneous_demand()
 time.sleep(5)
-response = api.get_data(InstantaneousUsage)
+response = api.get_data(InstantaneousDemand)
 ```
 Note: In real programs using asynchronous mode, it would probably make sense to make
 use of the schedule function of the EMU-2. This sets the frequency that certain events
